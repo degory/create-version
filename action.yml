@@ -1,0 +1,63 @@
+name: Create version number
+description: Tag repository with next version number and return both the tag (e.g. v0.0.0-alpha.1) and the package version number (e.g. 0.0.0-alpha.1)
+inputs:
+  token:
+    description: 'GitHub token'
+    required: true  
+  version:
+    description: 'Version number override'
+outputs:
+  tag: 
+    description: "Git tag"
+    value: ${{ steps.pick_version.outputs.tag }}
+  package: 
+    description: "Package version number"
+    value: ${{ steps.pick_version.outputs.package }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Create version number
+    id: create_version_number
+    uses: anothrNick/github-tag-action@1.33.0
+    if: ${{ github.actor != 'dependabot[bot]' && inputs.version == '' }}
+    env:
+      GITHUB_TOKEN: ${{ inputs.token }}
+      WITH_V: true
+      DEFAULT_BUMP: patch
+      RELEASE_BRANCHES: main,master
+
+  - name: Pick version
+    id: pick_version
+    shell: bash
+    run: |
+      VALID_VERSION_REGEX="^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+\.[0-9]+)?$"
+      if [ "${{ github.actor }}" == "dependabot[bot]" ] ; then
+        VERSION=v0.0.1-dependabot.$(date '+%Y%m%d%H%M%S')
+      elif [ ! -z "${MANUAL_VERSION}" ] ; then
+        echo "User supplied version: ${MANUAL_VERSION}"
+        VERSION="${MANUAL_VERSION}"
+      elif [ ! -z "${TAG_VERSION}" ] ; then
+        echo "Tag bump generated version: ${TAG_VERSION}"
+        VERSION="${TAG_VERSION}"
+      else
+        echo "Neither manual or tag version set"
+        exit 1
+      fi
+      if [[ ${VERSION} =~ ${VALID_VERSION_REGEX} ]] && [ "${VERSION}" != "v0.0.0" ] ; then
+        echo "Version number is valid: ${VERSION}"
+        echo "::set-output name=tag::${VERSION}"
+        echo "::set-output name=package::${VERSION:1}"
+      else
+        echo "Version number is not valid ${VERSION}"
+        exit 1
+      fi
+    env:
+      TAG_VERSION: ${{ steps.create_version_number.outputs.new_tag }}
+      MANUAL_VERSION: ${{ inputs.version }}        
+
+  - name: Echo version numbers
+    shell: bash
+    run: |
+      echo "tag version: ${{ steps.pick_version.outputs.tag }}"
+      echo "package version: ${{ steps.pick_version.outputs.package }}"
