@@ -4,8 +4,6 @@ inputs:
   token:
     description: 'GitHub token'
     required: true  
-  version:
-    description: 'Version number override'
 outputs:
   tag: 
     description: "Git tag"
@@ -34,14 +32,14 @@ runs:
       VALID_VERSION_REGEX="^v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+\.[0-9]+)?$"
       if [ "${{ github.actor }}" == "dependabot[bot]" ] ; then
         VERSION=v0.0.1-dependabot.$(date '+%Y%m%d%H%M%S')
-      elif [ ! -z "${MANUAL_VERSION}" ] ; then
-        echo "User supplied version: ${MANUAL_VERSION}"
-        VERSION="${MANUAL_VERSION}"
-      elif [ ! -z "${TAG_VERSION}" ] ; then
-        echo "Tag bump generated version: ${TAG_VERSION}"
-        VERSION="${TAG_VERSION}"
+      elif [ ! -z "${NEW_VERSION}" ] ; then
+        echo "Tag bump generated version: ${NEW_VERSION}"
+        VERSION="${NEW_VERSION}"
+      elif [ ! -z "${PREVIOUS_VERSION}" ] ; then
+        echo "Previous version: ${PREVIOUS_VERSION}"
+        VERSION="${PREVIOUS_VERSION}"
       else
-        echo "Neither manual or tag version set"
+        echo "Neither new or previous tag version set"
         exit 1
       fi
       if [[ ${VERSION} =~ ${VALID_VERSION_REGEX} ]] && [ "${VERSION}" != "v0.0.0" ] ; then
@@ -53,8 +51,8 @@ runs:
         exit 1
       fi
     env:
-      TAG_VERSION: ${{ steps.create_version_number.outputs.new_tag }}
-      MANUAL_VERSION: ${{ inputs.version }}        
+      PREVIOUS_VERSION: ${{ steps.create_version_number.outputs.tag }}
+      NEW_VERSION: ${{ steps.create_version_number.outputs.new_tag }}
 
   - name: Echo version numbers
     shell: bash
