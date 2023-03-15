@@ -44,7 +44,12 @@ runs:
         echo "Neither manual or tag version set"
         exit 1
       fi
-      if [[ ${VERSION} =~ ${VALID_VERSION_REGEX} ]] && [ "${VERSION}" != "v0.0.0" ] ; then
+      
+      if [ ${VERSION} == "v0.0.0" ; then
+        VERSION="v0.0.1";
+      fi
+      
+      if [[ ${VERSION} =~ ${VALID_VERSION_REGEX} ]] ; then
         echo "Version number is valid: ${VERSION}"
         echo "::set-output name=tag::${VERSION}"
         echo "::set-output name=package::${VERSION:1}"
