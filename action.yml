@@ -25,6 +25,7 @@ runs:
       GITHUB_TOKEN: ${{ inputs.token }}
       WITH_V: true
       DEFAULT_BUMP: patch
+      BRANCH_HISTORY: compare      
       RELEASE_BRANCHES: main,master
 
   - name: Pick version
